@@ -11,12 +11,6 @@ python manage.py createsuperuser
 ```
 Создаём супер-юзера с именем admin и паролем admin.
 
-### Запуск тестов
-Тесты следует запускать при работающем сервере.
-```
-cd DRF-Poll-Test/tests
-pytest
-```
 
 ## Описание API
 
