@@ -6,7 +6,6 @@ Testwork for Fabrika
 ```
 cd FR_testwork
 pip install -r requirements.txt
-cd backend
 python manage.py migrate
 python manage.py createsuperuser
 ```
