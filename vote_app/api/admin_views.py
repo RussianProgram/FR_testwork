@@ -41,10 +41,10 @@ class AdminPollDetailView(AdminPollMixin, generics.UpdateAPIView,generics.Destro
             result = PollSerializer(poll).data
             result['questions'] = []
             for question in poll.questions.all():
-                questionDict = QuestionSerializer(question).data
+                question_data = QuestionSerializer(question).data
                 if question.hasChoice:
-                    questionDict['options'] = UserOptionSerializer(question.options.all(), many=True).data
-                result['questions'].append(questionDict)
+                    question_data['options'] = UserOptionSerializer(question.options.all(), many=True).data
+                result['questions'].append(question_data)
 
             return Response(result)
 
@@ -65,20 +65,19 @@ class AdminPollDetailView(AdminPollMixin, generics.UpdateAPIView,generics.Destro
 
         return Response(serializer.data)
 
+    def destroy(self, request, *args, **kwargs):
+        return Response('Poll deleted')
 
-class AdminCreatePollView(AdminPollMixin):
-    def post(self,request,*args,**kwargs):
+class AdminCreatePollView(AdminPollMixin, generics.CreateAPIView):
+    def create(self, request, *args, **kwargs):
         poll_serializer = PollSerializer(data=request.data)
-        data = {}
-        if poll_serializer.is_valid():
-            poll_serializer.save()
-            data['response'] = True
+        poll_serializer.is_valid(raise_exception=True)
+        poll_data = poll_serializer.validated_data
+        new_poll = Poll(**poll_data)
+        new_poll.save()
+        return Response('Poll Created')
 
-            return Response(data,status.HTTP_200_OK)
 
-        else:
-            data = poll_serializer.errors
-            return Response(data)
 
 class AdminQuestionDetailView(AdminQuestionMixin,generics.UpdateAPIView,generics.DestroyAPIView):
     def get(self,request,p_pk,pk):
@@ -95,11 +94,14 @@ class AdminQuestionDetailView(AdminQuestionMixin,generics.UpdateAPIView,generics
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    def destroy(self, request, *args, **kwargs):
+        return Response('Question deleted')
+
 
 
 
 class AdminQuestionCreateView(AdminQuestionMixin, generics.CreateAPIView):
-    def post(self, request,pk):
+    def create(self, request,pk):
         poll = Poll.objects.get(id=pk)
         qs = QuestionSerializer(data=request.data)
         qs.is_valid(raise_exception=True)
@@ -107,7 +109,7 @@ class AdminQuestionCreateView(AdminQuestionMixin, generics.CreateAPIView):
         pd['poll'] = poll
         newQuestion = Question(**pd)
         newQuestion.save()
-
+        return Response('Question Created')
 
 
 
