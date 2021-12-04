@@ -42,6 +42,7 @@ class AdminPollDetailView(AdminPollMixin, generics.UpdateAPIView,generics.Destro
             result['questions'] = []
             for question in poll.questions.all():
                 question_data = QuestionSerializer(question).data
+
                 if question.hasChoice:
                     question_data['options'] = UserOptionSerializer(question.options.all(), many=True).data
                 result['questions'].append(question_data)
@@ -107,9 +108,35 @@ class AdminQuestionCreateView(AdminQuestionMixin, generics.CreateAPIView):
         qs.is_valid(raise_exception=True)
         pd = dict(qs.validated_data)
         pd['poll'] = poll
-        newQuestion = Question(**pd)
-        newQuestion.save()
-        return Response('Question Created')
+        new_question = Question(**pd)
+
+        require_choices = new_question.hasChoice
+        new_choices_list = []
+        if require_choices:
+            if not 'choices' in request.data:
+                raise Exception('choices are missing')
+            if type(request.data['choices']) != list or len(request.data['choices']) < 2:
+                raise Exception('Invalid choices')
+
+            index = 1
+            for option_text in request.data['choices']:
+                new_choices_list.append(Option(
+                    text=option_text,
+                    index=index
+                ))
+                index += 1
+
+        new_question.save()
+        if require_choices:
+            for new_choice in new_choices_list:
+                new_choice.question = new_choice
+                new_choice.save()
+
+        result = QuestionSerializer(new_question).data
+        if require_choices:
+            result['choices'] = [OptionSerializer(choice).data for choice in new_choices_list]
+
+        return Response(result)
 
 
 
